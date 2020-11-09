@@ -42,5 +42,5 @@ see [test cases](https://github.com/WolfgangFahl/eitparser/tree/main/tests)
 [Wiki](http://wiki.bitplan.com/index.php/eitparser)
 
 ### Authors
-* [Frank Glaser][https://github.com/betonme]
+* [Frank Glaser](https://github.com/betonme)
 * [Wolfgang Fahl](http://www.bitplan.com/Wolfgang_Fahl)
