@@ -5,7 +5,9 @@ Created on 2020-11-09
 '''
 import unittest
 import os
+import getpass
 from eit.eitparser import EitList
+
 
 class TestEitParser(unittest.TestCase):
     '''
@@ -23,8 +25,11 @@ class TestEitParser(unittest.TestCase):
         '''
         test the Event Information Table parser
         '''
-        home = os.path.expanduser("~")
-        eitdir= home+"/movies/eit"
+        if getpass.getuser()=="wfs":
+            home = os.path.expanduser("~")
+            eitdir= home+"/movies/eit"
+        else:
+            eitdir=os.path.dirname(os.path.abspath(__file__))
         EitList.readeit(eitdir,debug=False)
         pass
 
