@@ -23,50 +23,23 @@
 #   For more information on the GNU General Public License see:
 #   <http://www.gnu.org/licenses/>.
 #
-
-import os
 import pathlib
+import os
 import struct
 import sys
 import time
+import chardet
 
 from datetime import datetime
-
+def emcDebugOut(msg):
+    print(msg,file=sys.stderr)
+    
 #from Components.config import config
 #from Components.Language import language
 #from EMCTasker import emcDebugOut
 #from IsoFileSupport import IsoSupport
+
 #from MetaSupport import getInfoFile
-
-#def crc32(data):
-#   poly = 0x4c11db7
-#   crc = 0xffffffffL
-#   for byte in data:
-#       byte = bord(byte)
-#       for bit in range(7,-1,-1):  # MSB to LSB
-#           z32 = crc>>31    # top bit
-#           crc = crc << 1
-#           if ((byte>>bit)&1) ^ z32:
-#               crc = crc ^ poly
-#           crc = crc & 0xffffffffL
-#   return crc
-
-decoding_charSpecHR = {'Ć': '\u0106', 'æ': '\u0107', '®': '\u017D', '¾': '\u017E', '©': '\u0160', '¹': '\u0161', 'Č': '\u010C', 'è': '\u010D', 'ð': '\u0111'}
-
-decoding_charSpecCZSK = {'Ï'+'C': 'Č','Ï'+'E': 'Ě','Ï'+'L': 'Ľ','Ï'+'N': 'Ň','Ï'+'R': 'Ř','Ï'+'S': 'Š','Ï'+'T': 'Ť','Ï'+'Z': 'Ž','Ï'+'c': 'č','Ï'+'d': 'ď','Ï'+'e': 'ě','Ï'+'l': 'ľ', 'Ï'+'n': 'ň',
-'Ï'+'r': 'ř','Ï'+'s': 'š','Ï'+'t': 'ť','Ï'+'z': 'ž','Ï'+'D': 'Ď','Â'+'A': 'Á','Â'+'E': 'É','Â'+'I': 'Í','Â'+'O': 'Ó','Â'+'U': 'Ú','Â'+'a': 'á','Â'+'e': 'é','Â'+'i': 'í','Â'+'o': 'ó',
-'Â'+'u': 'ú','Â'+'y': 'ý','Ã'+'o': 'ô','Ã'+'O': 'Ô','Ê'+'u': 'ů','Ê'+'U': 'Ů','È'+'A': 'Ä','È'+'E': 'Ë','È'+'I': 'Ï','È'+'O': 'Ö','È'+'U': 'Ü','È'+'Y': 'Ÿ','È'+'a': 'ä','È'+'e': 'ë',
-'È'+'i': 'ï','È'+'o': 'ö','È'+'u': 'ü','È'+'y': 'ÿ'}
-
-def convertCharSpecHR(text):
-    for i, j in decoding_charSpecHR.items():
-        text = text.replace(i, j)
-    return text
-
-def convertCharSpecCZSK(text):
-    for i, j in decoding_charSpecCZSK.items():
-        text = text.replace(i, j)
-    return text
 
 def parseMJD(MJD):
     # Parse 16 bit unsigned int containing Modified Julian Date,
@@ -83,59 +56,33 @@ def parseMJD(MJD):
 def unBCD(byte):
     return (byte>>4)*10 + (byte & 0xf)
 
-def bord(i):
-    '''
-    replacement for ord which is not needed any more
-    '''
-    return i;
-
-def bstr(b):
-    '''
-    convert bytes to str
-    '''
-    if isinstance(b,int):
-        s=b
-    elif isinstance(b,list):
-        s=b""
-        for be in b:
-            s.append(bstr(be))
-    else:    
-        s=b
-    return s
-    
-
-
 #from Tools.ISO639 import LanguageCodes
 # -*- coding: iso-8859-2 -*-
 LanguageCodes = { }
 LanguageCodes["deu"] = LanguageCodes["ger"] = LanguageCodes["de"] = ("German", "Germanic")
 LanguageCodes["fra"] = LanguageCodes["fre"] = LanguageCodes["fr"] = ("French", "Romance")
-
-
 def language_iso639_2to3(alpha2):
     ret = alpha2
     if alpha2 in LanguageCodes:
         language = LanguageCodes[alpha2]
-        for alpha, name in list(LanguageCodes.items()):
+        for alpha, name in LanguageCodes.items():
             if name == language:
                 if len(alpha) == 3:
                     return alpha
     return ret
-#TEST
-#print LanguageCodes["sv"]
-#print language_iso639_2to3("sv")
-
 
 # Eit File support class
 # Description
 # http://de.wikipedia.org/wiki/Event_Information_Table
 class EitList():
-
-    EIT_SHORT_EVENT_DESCRIPTOR      = 0x4d
-    EIT_EXTENDED_EVENT_DESCRIPOR    =   0x4e
+    
+    
+    EIT_SHORT_EVENT_DESCRIPTOR = 0x4d
+    EIT_EXTENDED_EVENT_DESCRIPOR = 0x4e
 
     def __init__(self, path=None):
         self.eit_file = None
+        self.eit_mtime = 0
 
         #TODO
         # The dictionary implementation could be very slow
@@ -144,6 +91,7 @@ class EitList():
 
         self.__newPath(path)
         self.__readEitFile()
+
         
     @staticmethod
     def readeit(eitroot):
@@ -165,8 +113,27 @@ class EitList():
     def __newPath(self, path):
         name = None
         if path:
+            #TODO Too slow
+            #if path.endswith(".iso"):
+            #    if not self.iso:
+            #        self.iso = IsoSupport(path)
+            #    name = self.iso and self.iso.getIsoName()
+            #    if name and len(name):
+            #        path = "/home/root/dvd-" + name
+            #el
+
+            exts = [".eit"]
+            #fpath = getInfoFile(path, exts)[1]
+            #path = os.path.splitext(fpath)[0]
+
+            #if not os.path.exists(path + ".eit"):
+            #    # Strip existing cut number
+            #    if path[-4:-3] == "_" and path[-3:].isdigit():
+            #        path = path[:-4]
+            #path += ".eit"
             if self.eit_file != path:
                 self.eit_file = path
+                self.eit_mtime = 0
 
     def __mk_int(self, s):
         return int(s) if s else 0
@@ -207,9 +174,8 @@ class EitList():
     def getEitDescription(self):
         return self.eit.get('description', "").strip()
 
-    # Wrapper
     def getEitShortDescription(self):
-        return self.getEitName()
+        return self.eit.get('short_description', "").strip()
 
     def getEitExtendedDescription(self):
         return self.getEitDescription()
@@ -226,22 +192,26 @@ class EitList():
 
     def getEitDate(self):
         return self.__toDate(self.getEitStartDate(), self.getEitStartTime())
-    
-    def printError(self,msg):
-        print(msg,file=sys.stderr)
 
     ##############################################################################
     ## File IO Functions
-    def __readEitFile(self):
+    def __readEitFile(self,lang='de'):
         data = ""
         path = self.eit_file
 
-        #lang = language.getLanguage()[:2]
-        lang = language_iso639_2to3( "de" )
-        #print lang + bstr(path)
+        lang = (language_iso639_2to3(lang)).upper()
 
         if path and os.path.exists(path):
-                #print "Reading Event Information Table " + bstr(path)
+            mtime = os.path.getmtime(path)
+            if self.eit_mtime == mtime:
+                # File has not changed
+                pass
+
+            else:
+                #print "EMC TEST count Eit " + str(path)
+
+                # New path or file has changed
+                self.eit_mtime = mtime
 
                 # Read data from file
                 # OE1.6 with Pyton 2.6
@@ -252,7 +222,7 @@ class EitList():
                     #lines = f.readlines()
                     data = f.read()
                 except Exception as e:
-                    self.printError("[META] Exception in readEitFile: " + bstr(e))
+                    emcDebugOut("[META] Exception in readEitFile: " + str(e))
                 finally:
                     if f is not None:
                         f.close()
@@ -280,45 +250,131 @@ class EitList():
                     self.eit['duration'] = duration
 
                     pos = pos + 12
+                    name_event_descriptor = []
+                    name_event_descriptor_multi = []
+                    name_event_codepage = None
                     short_event_descriptor = []
                     short_event_descriptor_multi = []
+                    short_event_codepage = None
                     extended_event_descriptor = []
                     extended_event_descriptor_multi = []
+                    extended_event_codepage = None
                     component_descriptor = []
                     content_descriptor = []
                     linkage_descriptor = []
                     parental_rating_descriptor = []
                     endpos = len(data) - 1
+                    prev1_ISO_639_language_code = "x"
+                    prev2_ISO_639_language_code = "x"
                     while pos < endpos:
-                        rec = bord(data[pos])
-                        length = bord(data[pos+1]) + 2
+                        rec = ord(data[pos])
+                        if pos+1>=endpos:
+                            break
+                        length = ord(data[pos+1]) + 2
+                        #if pos+length>=endpos:
+                        #    break
                         if rec == 0x4D:
-                            descriptor_tag = bord(data[pos+1])
-                            descriptor_length = bord(data[pos+2])
-                            ISO_639_language_code = bstr(data[pos+3:pos+5])
-                            event_name_length = bord(data[pos+5])
-                            short_event_description = data[pos+6:pos+6+event_name_length]
+                            descriptor_tag = ord(data[pos+1])
+                            descriptor_length = ord(data[pos+2])
+                            ISO_639_language_code = str(data[pos+2:pos+5]).upper()
+                            event_name_length = ord(data[pos+5])
+                            name_event_description = ""
+                            for i in range (pos+6,pos+6+event_name_length):
+                                try:
+                                    if str(ord(data[i]))=="10" or int(str(ord(data[i])))>31:
+                                        name_event_description += data[i]
+                                except IndexError as e:
+                                    emcDebugOut("[META] Exception in readEitFile: " + str(e))
+                            if not name_event_codepage:
+                                try:
+                                    byte1 = str(ord(data[pos+6]))
+                                except:
+                                    byte1 = ''
+                                if byte1=="1": name_event_codepage = 'iso-8859-5'
+                                elif byte1=="2": name_event_codepage = 'iso-8859-6'
+                                elif byte1=="3": name_event_codepage = 'iso-8859-7'
+                                elif byte1=="4": name_event_codepage = 'iso-8859-8'
+                                elif byte1=="5": name_event_codepage = 'iso-8859-9'
+                                elif byte1=="6": name_event_codepage = 'iso-8859-10'
+                                elif byte1=="7": name_event_codepage = 'iso-8859-11'
+                                elif byte1=="9": name_event_codepage = 'iso-8859-13'
+                                elif byte1=="10": name_event_codepage = 'iso-8859-14'
+                                elif byte1=="11": name_event_codepage = 'iso-8859-15'
+                                elif byte1=="21": name_event_codepage = 'utf-8'
+                                if name_event_codepage:
+                                    emcDebugOut("[META] Found name_event encoding-type: " + name_event_codepage)
+                            short_event_description = ""
+                            if not short_event_codepage:
+                                try:
+                                    byte1 = str(ord(data[pos+7+event_name_length]))
+                                except:
+                                    byte1 = ''
+                                if byte1=="1": short_event_codepage = 'iso-8859-5'
+                                elif byte1=="2": short_event_codepage = 'iso-8859-6'
+                                elif byte1=="3": short_event_codepage = 'iso-8859-7'
+                                elif byte1=="4": short_event_codepage = 'iso-8859-8'
+                                elif byte1=="5": short_event_codepage = 'iso-8859-9'
+                                elif byte1=="6": short_event_codepage = 'iso-8859-10'
+                                elif byte1=="7": short_event_codepage = 'iso-8859-11'
+                                elif byte1=="9": short_event_codepage = 'iso-8859-13'
+                                elif byte1=="10": short_event_codepage = 'iso-8859-14'
+                                elif byte1=="11": short_event_codepage = 'iso-8859-15'
+                                elif byte1=="21": short_event_codepage = 'utf-8'
+                                if short_event_codepage:
+                                    emcDebugOut("[META] Found short_event encoding-type: " + short_event_codepage)
+                            for i in range (pos+7+event_name_length,pos+length):
+                                try:
+                                    if str(ord(data[i]))=="10" or int(str(ord(data[i])))>31:
+                                        short_event_description += data[i]
+                                except IndexError as e:
+                                    emcDebugOut("[META] Exception in readEitFile: " + str(e))
                             if ISO_639_language_code == lang:
                                 short_event_descriptor.append(short_event_description)
-                            short_event_descriptor_multi.append(short_event_description)
-
+                                name_event_descriptor.append(name_event_description)
+                            if (ISO_639_language_code == prev1_ISO_639_language_code) or (prev1_ISO_639_language_code == "x"):
+                                short_event_descriptor_multi.append(short_event_description)
+                                name_event_descriptor_multi.append(name_event_description)
+                            else:
+                                short_event_descriptor_multi.append("\n\n" + short_event_description)
+                                name_event_descriptor_multi.append(" " + name_event_description)
+                            prev1_ISO_639_language_code = ISO_639_language_code
                         elif rec == 0x4E:
-                            ISO_639_language_code = str(data[pos+3:pos+5])
+                            ISO_639_language_code = ""
+                            for i in range (pos+3,pos+6):
+                                ISO_639_language_code += data[i]
+                            ISO_639_language_code = ISO_639_language_code.upper()
                             extended_event_description = ""
-                            extended_event_description_multi = ""
+                            if not extended_event_codepage:
+                                try:
+                                    byte1 = str(ord(data[pos+8]))
+                                except:
+                                    byte1 = ''
+                                if byte1=="1": extended_event_codepage = 'iso-8859-5'
+                                elif byte1=="2": extended_event_codepage = 'iso-8859-6'
+                                elif byte1=="3": extended_event_codepage = 'iso-8859-7'
+                                elif byte1=="4": extended_event_codepage = 'iso-8859-8'
+                                elif byte1=="5": extended_event_codepage = 'iso-8859-9'
+                                elif byte1=="6": extended_event_codepage = 'iso-8859-10'
+                                elif byte1=="7": extended_event_codepage = 'iso-8859-11'
+                                elif byte1=="9": extended_event_codepage = 'iso-8859-13'
+                                elif byte1=="10": extended_event_codepage = 'iso-8859-14'
+                                elif byte1=="11": extended_event_codepage = 'iso-8859-15'
+                                elif byte1=="21": extended_event_codepage = 'utf-8'
+                                if extended_event_codepage:
+                                    emcDebugOut("[META] Found extended_event encoding-type: " + extended_event_codepage)
                             for i in range (pos+8,pos+length):
-                                if bstr(bord(data[i]))=="138":
-                                    extended_event_description += '\n'
-                                    extended_event_description_multi += '\n'
-                                else:
-                                    if data[i]== '\x10' or data[i]== '\x00' or  data[i]== '\x02':
-                                        pass
-                                    else:
-                                        extended_event_description += chr(data[i])
-                                        extended_event_description_multi += chr(data[i])
+                                try:
+                                    if str(ord(data[i]))=="10" or int(str(ord(data[i])))>31:
+                                        extended_event_description += data[i]
+                                except IndexError as e:
+                                    emcDebugOut("[META] Exception in readEitFile: " + str(e))
                             if ISO_639_language_code == lang:
                                 extended_event_descriptor.append(extended_event_description)
-                            extended_event_descriptor_multi.append(extended_event_description)
+                            if (ISO_639_language_code == prev2_ISO_639_language_code) or (prev2_ISO_639_language_code == "x"):
+                                extended_event_descriptor_multi.append(extended_event_description)
+                            else:
+                                extended_event_descriptor_multi.append("\n\n" + extended_event_description)
+                            prev2_ISO_639_language_code = ISO_639_language_code
                         elif rec == 0x50:
                             component_descriptor.append(data[pos+8:pos+length])
                         elif rec == 0x54:
@@ -328,68 +384,102 @@ class EitList():
                         elif rec == 0x55:
                             parental_rating_descriptor.append(data[pos+2:pos+length])
                         else:
-                            #print "unsopported descriptor: %x %x" %(rec, pos + 12)
-                            #print data[pos:pos+length]
+#                            print "unsupported descriptor: %x %x" %(rec, pos + 12)
+#                            print data[pos:pos+length]
                             pass
                         pos += length
 
-                    # Very bad but there can be both encodings
-                    # User files can be in cp1252
-                    # Is there no other way?
+                    if name_event_descriptor:
+                        name_event_descriptor = "".join(name_event_descriptor)
+                    else:
+                        name_event_descriptor = ("".join(name_event_descriptor_multi)).strip()
+
                     if short_event_descriptor:
                         short_event_descriptor = "".join(short_event_descriptor)
                     else:
-                        short_event_descriptor = "".join(bstr(short_event_descriptor_multi))
-                    if short_event_descriptor:
-                        #try:
-                        #   short_event_descriptor = short_event_descriptor.decode("iso-8859-1").encode("utf-8")
-                        #except UnicodeDecodeError:
-                        #   pass
-                        try:
-                            short_event_descriptor.decode('utf-8')
-                        except UnicodeDecodeError:
-                            try:
-                                short_event_descriptor = short_event_descriptor.decode("cp1252").encode("utf-8")
-                            except UnicodeDecodeError:
-                                # do nothing, otherwise cyrillic wont properly displayed
-                                #short_event_descriptor = short_event_descriptor.decode("iso-8859-1").encode("utf-8")
-                                pass
-                            if (lang == "cs") or (lang == "sk"):
-                                short_event_descriptor = bstr(convertCharSpecCZSK(short_event_descriptor))
-                            if (lang == "hr"):
-                                short_event_descriptor = bstr(convertCharSpecHR(short_event_descriptor))
-                    self.eit['name'] = short_event_descriptor
+                        short_event_descriptor = ("".join(short_event_descriptor_multi)).strip()
 
-                    # Very bad but there can be both encodings
-                    # User files can be in cp1252
-                    # Is there no other way?
                     if extended_event_descriptor:
                         extended_event_descriptor = "".join(extended_event_descriptor)
                     else:
-                        extended_event_descriptor = "".join(extended_event_descriptor_multi)
-                    if extended_event_descriptor:
-                        #try:
-                        #   extended_event_descriptor = extended_event_descriptor.decode("iso-8859-1").encode("utf-8")
-                        #except UnicodeDecodeError:
-                        #   pass
+                        extended_event_descriptor = ("".join(extended_event_descriptor_multi)).strip()
+
+                    if not(extended_event_descriptor):
+                        extended_event_descriptor = short_event_descriptor
+                        extended_event_codepage = short_event_codepage
+
+                    if name_event_descriptor:
                         try:
-                            extended_event_descriptor.decode('utf-8')
-                        except UnicodeDecodeError:
-                            try:
-                                extended_event_descriptor = extended_event_descriptor.decode("cp1252").encode("utf-8")
-                            except UnicodeDecodeError:
-                                # do nothing, otherwise cyrillic wont properly displayed
-                                #extended_event_descriptor = extended_event_descriptor.decode("iso-8859-1").encode("utf-8")
-                                pass
-                            if (lang == "cs") or (lang == "sk"):
-                                extended_event_descriptor = bstr(convertCharSpecCZSK(extended_event_descriptor))
-                            if (lang == "hr"):
-                                extended_event_descriptor = bstr(convertCharSpecHR(extended_event_descriptor))
+                            if name_event_codepage:
+                                if name_event_codepage != 'utf-8':
+                                    name_event_descriptor = name_event_descriptor.decode(name_event_codepage).encode("utf-8")
+                                else:
+                                    name_event_descriptor.decode('utf-8')
+                            else:
+                                encdata = chardet.detect(name_event_descriptor)
+                                enc = encdata['encoding'].lower()
+                                confidence = str(encdata['confidence'])
+                                emcDebugOut("[META] Detected name_event encoding-type: " + enc + " (" + confidence + ")")
+                                if enc == "utf-8":
+                                    name_event_descriptor.decode(enc)
+                                else:
+                                    name_event_descriptor = name_event_descriptor.decode(enc).encode('utf-8')
+                        except (UnicodeDecodeError, AttributeError) as e:
+                            emcDebugOut("[META] Exception in readEitFile: " + str(e))
+                    self.eit['name'] = name_event_descriptor
+
+                    if short_event_descriptor:
+                        try:
+                            if short_event_codepage:
+                                if short_event_codepage != 'utf-8':
+                                    short_event_descriptor = short_event_descriptor.decode(short_event_codepage).encode("utf-8")
+                                else:
+                                    short_event_descriptor.decode('utf-8')
+                            else:
+                                encdata = chardet.detect(short_event_descriptor)
+                                enc = encdata['encoding'].lower()
+                                confidence = str(encdata['confidence'])
+                                emcDebugOut("[META] Detected short_event encoding-type: " + enc + " (" + confidence + ")")
+                                if enc == "utf-8":
+                                    short_event_descriptor.decode(enc)
+                                else:
+                                    short_event_descriptor = short_event_descriptor.decode(enc).encode('utf-8')
+                        except (UnicodeDecodeError, AttributeError) as e:
+                            emcDebugOut("[META] Exception in readEitFile: " + str(e))
+                    self.eit['short_description'] = short_event_descriptor
+
+                    if extended_event_descriptor:
+                        try:
+                            if extended_event_codepage:
+                                if extended_event_codepage != 'utf-8':
+                                    extended_event_descriptor = extended_event_descriptor.decode(extended_event_codepage).encode("utf-8")
+                                else:
+                                    extended_event_descriptor.decode('utf-8')
+                            else:
+                                encdata = chardet.detect(extended_event_descriptor)
+                                enc = encdata['encoding'].lower()
+                                confidence = str(encdata['confidence'])
+                                emcDebugOut("[META] Detected extended_event encoding-type: " + enc + " (" + confidence + ")")
+                                if enc == "utf-8":
+                                    extended_event_descriptor.decode(enc)
+                                else:
+                                    extended_event_descriptor = extended_event_descriptor.decode(enc).encode('utf-8')
+                        except (UnicodeDecodeError, AttributeError) as e:
+                            emcDebugOut("[META] Exception in readEitFile: " + str(e))
+
+                        # This will fix EIT data of RTL group with missing line breaks in extended event description
+                        import re
+                        extended_event_descriptor = re.sub('((?:Moderat(?:ion:|or(?:in){0,1})|Vorsitz: |Jur(?:isten|y): |G(?:\xC3\xA4|a)st(?:e){0,1}: |Mit (?:Staatsanwalt|Richter(?:in){0,1}|den Schadenregulierern) |Julia Leisch).*?[a-z]+)(\'{0,1}[0-9A-Z\'])', r'\1\n\n\2', extended_event_descriptor)
                     self.eit['description'] = extended_event_descriptor
 
                 else:
                     # No date clear all
                     self.eit = {}
+
+        else:
+            # No path or no file clear all
+            self.eit = {}
+ 
 
 """Module docstring.
 
