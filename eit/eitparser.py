@@ -25,7 +25,9 @@
 #
 
 import os
+import pathlib
 import struct
+import sys
 import time
 
 from datetime import datetime
@@ -40,7 +42,7 @@ from datetime import datetime
 #   poly = 0x4c11db7
 #   crc = 0xffffffffL
 #   for byte in data:
-#       byte = ord(byte)
+#       byte = bord(byte)
 #       for bit in range(7,-1,-1):  # MSB to LSB
 #           z32 = crc>>31    # top bit
 #           crc = crc << 1
@@ -80,6 +82,27 @@ def parseMJD(MJD):
 
 def unBCD(byte):
     return (byte>>4)*10 + (byte & 0xf)
+
+def bord(i):
+    '''
+    replacement for ord which is not needed any more
+    '''
+    return i;
+
+def bstr(b):
+    '''
+    convert bytes to str
+    '''
+    if isinstance(b,int):
+        s=b
+    elif isinstance(b,list):
+        s=b""
+        for be in b:
+            s.append(bstr(be))
+    else:    
+        s=b
+    return s
+    
 
 
 #from Tools.ISO639 import LanguageCodes
@@ -121,6 +144,23 @@ class EitList():
 
         self.__newPath(path)
         self.__readEitFile()
+        
+    @staticmethod
+    def readeit(eitroot):
+        if os.path.isdir(eitroot):
+            for p in pathlib.Path(eitroot).iterdir():
+                if p.is_file():
+                    if p.name.endswith(".eit"):
+                        EitList.readeitFile(p)
+        elif os.path.isfile(eitroot):
+            EitList.readeitFile(eitroot)
+            
+    @staticmethod
+    def readeitFile(eitfile):
+        eitlist=EitList(eitfile)
+        print(eitlist.getEitName());
+        print(eitlist.getEitStartDate());
+        print(eitlist.getEitDescription());    
 
     def __newPath(self, path):
         name = None
@@ -186,6 +226,9 @@ class EitList():
 
     def getEitDate(self):
         return self.__toDate(self.getEitStartDate(), self.getEitStartTime())
+    
+    def printError(self,msg):
+        print(msg,file=sys.stderr)
 
     ##############################################################################
     ## File IO Functions
@@ -195,10 +238,10 @@ class EitList():
 
         #lang = language.getLanguage()[:2]
         lang = language_iso639_2to3( "de" )
-        #print lang + str(path)
+        #print lang + bstr(path)
 
         if path and os.path.exists(path):
-                #print "Reading Event Information Table " + str(path)
+                #print "Reading Event Information Table " + bstr(path)
 
                 # Read data from file
                 # OE1.6 with Pyton 2.6
@@ -209,7 +252,7 @@ class EitList():
                     #lines = f.readlines()
                     data = f.read()
                 except Exception as e:
-                    emcDebugOut("[META] Exception in readEitFile: " + str(e))
+                    self.printError("[META] Exception in readEitFile: " + bstr(e))
                 finally:
                     if f is not None:
                         f.close()
@@ -247,13 +290,13 @@ class EitList():
                     parental_rating_descriptor = []
                     endpos = len(data) - 1
                     while pos < endpos:
-                        rec = ord(data[pos])
-                        length = ord(data[pos+1]) + 2
+                        rec = bord(data[pos])
+                        length = bord(data[pos+1]) + 2
                         if rec == 0x4D:
-                            descriptor_tag = ord(data[pos+1])
-                            descriptor_length = ord(data[pos+2])
-                            ISO_639_language_code = str(data[pos+3:pos+5])
-                            event_name_length = ord(data[pos+5])
+                            descriptor_tag = bord(data[pos+1])
+                            descriptor_length = bord(data[pos+2])
+                            ISO_639_language_code = bstr(data[pos+3:pos+5])
+                            event_name_length = bord(data[pos+5])
                             short_event_description = data[pos+6:pos+6+event_name_length]
                             if ISO_639_language_code == lang:
                                 short_event_descriptor.append(short_event_description)
@@ -264,15 +307,15 @@ class EitList():
                             extended_event_description = ""
                             extended_event_description_multi = ""
                             for i in range (pos+8,pos+length):
-                                if str(ord(data[i]))=="138":
+                                if bstr(bord(data[i]))=="138":
                                     extended_event_description += '\n'
                                     extended_event_description_multi += '\n'
                                 else:
                                     if data[i]== '\x10' or data[i]== '\x00' or  data[i]== '\x02':
                                         pass
                                     else:
-                                        extended_event_description += data[i]
-                                        extended_event_description_multi += data[i]
+                                        extended_event_description += chr(data[i])
+                                        extended_event_description_multi += chr(data[i])
                             if ISO_639_language_code == lang:
                                 extended_event_descriptor.append(extended_event_description)
                             extended_event_descriptor_multi.append(extended_event_description)
@@ -296,7 +339,7 @@ class EitList():
                     if short_event_descriptor:
                         short_event_descriptor = "".join(short_event_descriptor)
                     else:
-                        short_event_descriptor = "".join(short_event_descriptor_multi)
+                        short_event_descriptor = "".join(bstr(short_event_descriptor_multi))
                     if short_event_descriptor:
                         #try:
                         #   short_event_descriptor = short_event_descriptor.decode("iso-8859-1").encode("utf-8")
@@ -312,9 +355,9 @@ class EitList():
                                 #short_event_descriptor = short_event_descriptor.decode("iso-8859-1").encode("utf-8")
                                 pass
                             if (lang == "cs") or (lang == "sk"):
-                                short_event_descriptor = str(convertCharSpecCZSK(short_event_descriptor))
+                                short_event_descriptor = bstr(convertCharSpecCZSK(short_event_descriptor))
                             if (lang == "hr"):
-                                short_event_descriptor = str(convertCharSpecHR(short_event_descriptor))
+                                short_event_descriptor = bstr(convertCharSpecHR(short_event_descriptor))
                     self.eit['name'] = short_event_descriptor
 
                     # Very bad but there can be both encodings
@@ -339,9 +382,9 @@ class EitList():
                                 #extended_event_descriptor = extended_event_descriptor.decode("iso-8859-1").encode("utf-8")
                                 pass
                             if (lang == "cs") or (lang == "sk"):
-                                extended_event_descriptor = str(convertCharSpecCZSK(extended_event_descriptor))
+                                extended_event_descriptor = bstr(convertCharSpecCZSK(extended_event_descriptor))
                             if (lang == "hr"):
-                                extended_event_descriptor = str(convertCharSpecHR(extended_event_descriptor))
+                                extended_event_descriptor = bstr(convertCharSpecHR(extended_event_descriptor))
                     self.eit['description'] = extended_event_descriptor
 
                 else:
@@ -352,14 +395,7 @@ class EitList():
 
 Read Eit File and show the information.
 """
-import sys
 import getopt
-
-def readeit(eitfile):
-    eitlist=EitList(eitfile)
-    print(eitlist.getEitName());
-    print(eitlist.getEitStartDate());
-    print(eitlist.getEitDescription());
 
 
 def main():
@@ -377,7 +413,7 @@ def main():
             sys.exit(0)
     # process arguments
     for arg in args:
-        readeit(arg) # process() is defined elsewhere
+        EitList.readeit(arg) # process() is defined elsewhere
 
 if __name__ == "__main__":
     main()

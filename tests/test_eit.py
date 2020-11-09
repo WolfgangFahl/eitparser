@@ -4,7 +4,8 @@ Created on 2020-11-09
 @author: wf
 '''
 import unittest
-
+import os
+from eit.eitparser import EitList
 
 class TestEitParser(unittest.TestCase):
 
@@ -17,7 +18,13 @@ class TestEitParser(unittest.TestCase):
         pass
 
 
-    def testName(self):
+    def testEitParser(self):
+        '''
+        test the Event Information Table parser
+        '''
+        home = os.path.expanduser("~")
+        eitdir= home+"/movies/eit"
+        EitList.readeit(eitdir)
         pass
 
 
