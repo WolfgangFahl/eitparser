@@ -1,0 +1,692 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eit.eitparser &mdash; eitparser  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> eitparser
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../eit.html">eit package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">tests package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">eitparser</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>eit.eitparser</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for eit.eitparser</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="c1"># encoding: utf-8</span>
+<span class="c1">#</span>
+<span class="c1"># EitSupport</span>
+<span class="c1"># Copyright (C) 2011 betonme</span>
+<span class="c1"># Copyright (C) 2016 Wolfgang Fahl</span>
+<span class="c1"># </span>
+<span class="c1"># This EITParser is based on:</span>
+<span class="c1"># https://github.com/betonme/e2openplugin-EnhancedMovieCenter/blob/master/src/EitSupport.py</span>
+<span class="c1">#</span>
+<span class="c1"># In case of reuse of this source code please do not remove this copyright.</span>
+<span class="c1">#</span>
+<span class="c1">#   This program is free software: you can redistribute it and/or modify</span>
+<span class="c1">#   it under the terms of the GNU General Public License as published by</span>
+<span class="c1">#   the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1">#   (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1">#   This program is distributed in the hope that it will be useful,</span>
+<span class="c1">#   but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1">#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1">#   GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1">#   For more information on the GNU General Public License see:</span>
+<span class="c1">#   &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">#</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">chardet</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+    
+<span class="c1">#from Components.config import config</span>
+<span class="c1">#from Components.Language import language</span>
+<span class="c1">#from EMCTasker import emcDebugOut</span>
+<span class="c1">#from IsoFileSupport import IsoSupport</span>
+
+<span class="c1">#from MetaSupport import getInfoFile</span>
+
+<div class="viewcode-block" id="parseMJD"><a class="viewcode-back" href="../../eit.html#eit.eitparser.parseMJD">[docs]</a><span class="k">def</span> <span class="nf">parseMJD</span><span class="p">(</span><span class="n">MJD</span><span class="p">):</span>
+    <span class="c1"># Parse 16 bit unsigned int containing Modified Julian Date,</span>
+    <span class="c1"># as per DVB-SI spec</span>
+    <span class="c1"># returning year,month,day</span>
+    <span class="n">YY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span><span class="n">MJD</span> <span class="o">-</span> <span class="mf">15078.2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">365.25</span> <span class="p">)</span>
+    <span class="n">MM</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span><span class="n">MJD</span> <span class="o">-</span> <span class="mf">14956.1</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">YY</span><span class="o">*</span><span class="mf">365.25</span><span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="mf">30.6001</span> <span class="p">)</span>
+    <span class="n">D</span>  <span class="o">=</span> <span class="n">MJD</span> <span class="o">-</span> <span class="mi">14956</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">YY</span><span class="o">*</span><span class="mf">365.25</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">MM</span> <span class="o">*</span> <span class="mf">30.6001</span><span class="p">)</span>
+    <span class="n">K</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">if</span> <span class="n">MM</span> <span class="o">==</span> <span class="mi">14</span> <span class="ow">or</span> <span class="n">MM</span> <span class="o">==</span> <span class="mi">15</span><span class="p">:</span> <span class="n">K</span><span class="o">=</span><span class="mi">1</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1900</span> <span class="o">+</span> <span class="n">YY</span><span class="o">+</span><span class="n">K</span><span class="p">),</span> <span class="p">(</span><span class="n">MM</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">K</span><span class="o">*</span><span class="mi">12</span><span class="p">),</span> <span class="n">D</span></div>
+
+<div class="viewcode-block" id="unBCD"><a class="viewcode-back" href="../../eit.html#eit.eitparser.unBCD">[docs]</a><span class="k">def</span> <span class="nf">unBCD</span><span class="p">(</span><span class="n">byte</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">byte</span><span class="o">&gt;&gt;</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="p">(</span><span class="n">byte</span> <span class="o">&amp;</span> <span class="mh">0xf</span><span class="p">)</span></div>
+
+<span class="c1">#from Tools.ISO639 import LanguageCodes</span>
+<span class="c1"># -*- coding: iso-8859-2 -*-</span>
+<span class="n">LanguageCodes</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>
+<span class="n">LanguageCodes</span><span class="p">[</span><span class="s2">&quot;deu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LanguageCodes</span><span class="p">[</span><span class="s2">&quot;ger&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LanguageCodes</span><span class="p">[</span><span class="s2">&quot;de&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;German&quot;</span><span class="p">,</span> <span class="s2">&quot;Germanic&quot;</span><span class="p">)</span>
+<span class="n">LanguageCodes</span><span class="p">[</span><span class="s2">&quot;fra&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LanguageCodes</span><span class="p">[</span><span class="s2">&quot;fre&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LanguageCodes</span><span class="p">[</span><span class="s2">&quot;fr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;French&quot;</span><span class="p">,</span> <span class="s2">&quot;Romance&quot;</span><span class="p">)</span>
+<div class="viewcode-block" id="language_iso639_2to3"><a class="viewcode-back" href="../../eit.html#eit.eitparser.language_iso639_2to3">[docs]</a><span class="k">def</span> <span class="nf">language_iso639_2to3</span><span class="p">(</span><span class="n">alpha2</span><span class="p">):</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">alpha2</span>
+    <span class="k">if</span> <span class="n">alpha2</span> <span class="ow">in</span> <span class="n">LanguageCodes</span><span class="p">:</span>
+        <span class="n">language</span> <span class="o">=</span> <span class="n">LanguageCodes</span><span class="p">[</span><span class="n">alpha2</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">LanguageCodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">language</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">alpha</span>
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="bord"><a class="viewcode-back" href="../../eit.html#eit.eitparser.bord">[docs]</a><span class="k">def</span> <span class="nf">bord</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">    binary ord - just for code compatibility</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">b</span></div>
+
+<div class="viewcode-block" id="Bytes"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Bytes">[docs]</a><span class="k">class</span> <span class="nc">Bytes</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bytes</span><span class="o">=</span><span class="nb">bytearray</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="Bytes.append"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Bytes.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="Bytes.toString"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Bytes.toString">[docs]</a>    <span class="k">def</span> <span class="nf">toString</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">text</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bytes</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">text</span></div>
+    
+<div class="viewcode-block" id="Bytes.join"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Bytes.join">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">join</span><span class="p">(</span><span class="n">blist</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        join the list of bytes</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">br</span><span class="o">=</span><span class="n">Bytes</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blist</span><span class="p">:</span>
+            <span class="n">br</span><span class="o">.</span><span class="n">bytes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">bytes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">br</span></div>
+    
+<div class="viewcode-block" id="Bytes.strip"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Bytes.strip">[docs]</a>    <span class="k">def</span> <span class="nf">strip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        strip me</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># https://stackoverflow.com/questions/9560759/python-3-how-to-make-strip-work-for-bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bytes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bytes</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span></div></div>
+            
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">eitList</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eitList</span><span class="o">=</span><span class="n">eitList</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">=</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">=</span><span class="n">Bytes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_multi</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="kc">None</span>
+        
+<div class="viewcode-block" id="Event.log"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eitList</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="Event.readLanguageCode"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event.readLanguageCode">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">readLanguageCode</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">ofs</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        read the language code from the given offset in the data</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">languageCode</span><span class="o">=</span><span class="n">Bytes</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">ofs</span><span class="p">,</span><span class="n">ofs</span><span class="o">+</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">languageCode</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">languageCode</span> <span class="o">=</span> <span class="n">languageCode</span><span class="o">.</span><span class="n">toString</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span></div>
+        
+<div class="viewcode-block" id="Event.readDescription"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event.readDescription">[docs]</a>    <span class="k">def</span> <span class="nf">readDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">ofsStart</span><span class="p">,</span><span class="n">ofsEnd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        read my description from the given offset</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">ofsEnd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_name_length</span> <span class="o">=</span> <span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">ofsStart</span><span class="p">])</span>
+            <span class="n">ofsStart</span><span class="o">=</span><span class="n">ofsStart</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">ofsEnd</span><span class="o">=</span><span class="n">ofsStart</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">event_name_length</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">ofsStart</span><span class="p">,</span><span class="n">ofsEnd</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">==</span><span class="s2">&quot;10&quot;</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span><span class="o">&gt;</span><span class="mi">31</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[META] Exception in readEitFile: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+                
+<div class="viewcode-block" id="Event.appendDescription"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event.appendDescription">[docs]</a>    <span class="k">def</span> <span class="nf">appendDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lang</span><span class="p">,</span> <span class="n">ISO_639_language_code</span><span class="p">,</span><span class="n">prev1_ISO_639_language_code</span><span class="p">,</span><span class="n">delim</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ISO_639_language_code</span> <span class="o">==</span> <span class="n">lang</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ISO_639_language_code</span> <span class="o">==</span> <span class="n">prev1_ISO_639_language_code</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">prev1_ISO_639_language_code</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_multi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor_multi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delim</span><span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">)</span></div>
+            
+<div class="viewcode-block" id="Event.joinDescriptor"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event.joinDescriptor">[docs]</a>    <span class="k">def</span> <span class="nf">joinDescriptor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span> <span class="o">=</span> <span class="n">Bytes</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span> <span class="o">=</span> <span class="n">Bytes</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptor_multi</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+            
+<div class="viewcode-block" id="Event.fixEncoding"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event.fixEncoding">[docs]</a>    <span class="k">def</span> <span class="nf">fixEncoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># get back the raw bytes</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">.</span><span class="n">bytes</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">!=</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">codepage</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">encdata</span> <span class="o">=</span> <span class="n">chardet</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="p">)</span>
+                    <span class="n">enc</span> <span class="o">=</span> <span class="n">encdata</span><span class="p">[</span><span class="s1">&#39;encoding&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                    <span class="n">confidence</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">encdata</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[META] Detected </span><span class="si">%s</span><span class="s2"> event encoding-type: </span><span class="si">%s</span><span class="s2"> ( </span><span class="si">%s</span><span class="s2"> )&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="n">enc</span><span class="p">,</span><span class="n">confidence</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">enc</span> <span class="o">==</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">enc</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">enc</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">UnicodeDecodeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[META] Exception in readEitFile: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptor</span></div>
+
+            
+<div class="viewcode-block" id="Event.readCodepage"><a class="viewcode-back" href="../../eit.html#eit.eitparser.Event.readCodepage">[docs]</a>    <span class="k">def</span> <span class="nf">readCodepage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">ofs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">byte1</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">ofs</span><span class="p">]))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">byte1</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-5&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-6&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-7&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;4&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-8&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;5&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-9&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;6&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-10&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;7&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-11&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;9&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-13&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-14&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;iso-8859-15&#39;</span>
+        <span class="k">elif</span> <span class="n">byte1</span><span class="o">==</span><span class="s2">&quot;21&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">codepage</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[META] Found </span><span class="si">%s</span><span class="s2"> encoding-type: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">codepage</span><span class="p">))</span></div></div>
+
+<span class="c1"># Eit File support class</span>
+<span class="c1"># Description</span>
+<span class="c1"># http://de.wikipedia.org/wiki/Event_Information_Table</span>
+<div class="viewcode-block" id="EitList"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList">[docs]</a><span class="k">class</span> <span class="nc">EitList</span><span class="p">():</span>
+    
+    
+    <span class="n">EIT_SHORT_EVENT_DESCRIPTOR</span> <span class="o">=</span> <span class="mh">0x4d</span>
+    <span class="n">EIT_EXTENDED_EVENT_DESCRIPOR</span> <span class="o">=</span> <span class="mh">0x4e</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eit_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eit_mtime</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="o">=</span><span class="n">debug</span>
+
+        <span class="c1">#TODO</span>
+        <span class="c1"># The dictionary implementation could be very slow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eit</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iso</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__newPath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__readEitFile</span><span class="p">()</span>
+
+<div class="viewcode-block" id="EitList.log"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span><span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span></div>
+            
+<div class="viewcode-block" id="EitList.readeit"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.readeit">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">readeit</span><span class="p">(</span><span class="n">eitroot</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">eitroot</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">eitroot</span><span class="p">)</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.eit&quot;</span><span class="p">):</span>
+                        <span class="n">EitList</span><span class="o">.</span><span class="n">readeitFile</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">debug</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">eitroot</span><span class="p">):</span>
+            <span class="n">EitList</span><span class="o">.</span><span class="n">readeitFile</span><span class="p">(</span><span class="n">eitroot</span><span class="p">,</span><span class="n">debug</span><span class="p">)</span></div>
+            
+<div class="viewcode-block" id="EitList.readeitFile"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.readeitFile">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">readeitFile</span><span class="p">(</span><span class="n">eitfile</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">eitlist</span><span class="o">=</span><span class="n">EitList</span><span class="p">(</span><span class="n">eitfile</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">eitlist</span><span class="o">.</span><span class="n">getEitName</span><span class="p">());</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">eitlist</span><span class="o">.</span><span class="n">getEitStartDate</span><span class="p">());</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">eitlist</span><span class="o">.</span><span class="n">getEitDescription</span><span class="p">());</span>    </div>
+
+    <span class="k">def</span> <span class="nf">__newPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+            <span class="c1">#TODO Too slow</span>
+            <span class="c1">#if path.endswith(&quot;.iso&quot;):</span>
+            <span class="c1">#    if not self.iso:</span>
+            <span class="c1">#        self.iso = IsoSupport(path)</span>
+            <span class="c1">#    name = self.iso and self.iso.getIsoName()</span>
+            <span class="c1">#    if name and len(name):</span>
+            <span class="c1">#        path = &quot;/home/root/dvd-&quot; + name</span>
+            <span class="c1">#el</span>
+
+            <span class="n">exts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;.eit&quot;</span><span class="p">]</span>
+            <span class="c1">#fpath = getInfoFile(path, exts)[1]</span>
+            <span class="c1">#path = os.path.splitext(fpath)[0]</span>
+
+            <span class="c1">#if not os.path.exists(path + &quot;.eit&quot;):</span>
+            <span class="c1">#    # Strip existing cut number</span>
+            <span class="c1">#    if path[-4:-3] == &quot;_&quot; and path[-3:].isdigit():</span>
+            <span class="c1">#        path = path[:-4]</span>
+            <span class="c1">#path += &quot;.eit&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit_file</span> <span class="o">!=</span> <span class="n">path</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eit_file</span> <span class="o">=</span> <span class="n">path</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eit_mtime</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__mk_int</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__toDate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">d</span> <span class="ow">and</span> <span class="n">t</span><span class="p">:</span>
+            <span class="c1">#TODO Is there another fast and safe way to get the datetime</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1">##############################################################################</span>
+    <span class="c1">## Get Functions</span>
+<div class="viewcode-block" id="EitList.getEitsid"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitsid">[docs]</a>    <span class="k">def</span> <span class="nf">getEitsid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;service&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="c1">#TODO</span></div>
+
+<div class="viewcode-block" id="EitList.getEitTsId"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitTsId">[docs]</a>    <span class="k">def</span> <span class="nf">getEitTsId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;transportstream&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="c1">#TODO</span></div>
+
+<div class="viewcode-block" id="EitList.getEitWhen"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitWhen">[docs]</a>    <span class="k">def</span> <span class="nf">getEitWhen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;when&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EitList.getEitStartDate"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitStartDate">[docs]</a>    <span class="k">def</span> <span class="nf">getEitStartDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;startdate&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EitList.getEitStartTime"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitStartTime">[docs]</a>    <span class="k">def</span> <span class="nf">getEitStartTime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;starttime&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EitList.getEitDuration"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitDuration">[docs]</a>    <span class="k">def</span> <span class="nf">getEitDuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;duration&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EitList.getEitName"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitName">[docs]</a>    <span class="k">def</span> <span class="nf">getEitName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="EitList.getEitDescription"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitDescription">[docs]</a>    <span class="k">def</span> <span class="nf">getEitDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="EitList.getEitShortDescription"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitShortDescription">[docs]</a>    <span class="k">def</span> <span class="nf">getEitShortDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;short_description&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="EitList.getEitExtendedDescription"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitExtendedDescription">[docs]</a>    <span class="k">def</span> <span class="nf">getEitExtendedDescription</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEitDescription</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="EitList.getEitLengthInSeconds"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitLengthInSeconds">[docs]</a>    <span class="k">def</span> <span class="nf">getEitLengthInSeconds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;duration&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="c1">#TODO Is there another fast and safe way to get the length</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">length</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mk_int</span><span class="p">((</span><span class="n">length</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">60</span> <span class="o">+</span> <span class="n">length</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="mi">60</span> <span class="o">+</span> <span class="n">length</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">length</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mk_int</span><span class="p">(</span><span class="n">length</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">60</span> <span class="o">+</span> <span class="n">length</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mk_int</span><span class="p">(</span><span class="n">length</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EitList.getEitDate"><a class="viewcode-back" href="../../eit.html#eit.eitparser.EitList.getEitDate">[docs]</a>    <span class="k">def</span> <span class="nf">getEitDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__toDate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getEitStartDate</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEitStartTime</span><span class="p">())</span></div>
+
+    <span class="c1">##############################################################################</span>
+    <span class="c1">## File IO Functions</span>
+    <span class="k">def</span> <span class="nf">__readEitFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">lang</span><span class="o">=</span><span class="s1">&#39;de&#39;</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit_file</span>
+
+        <span class="n">lang</span> <span class="o">=</span> <span class="p">(</span><span class="n">language_iso639_2to3</span><span class="p">(</span><span class="n">lang</span><span class="p">))</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">mtime</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eit_mtime</span> <span class="o">==</span> <span class="n">mtime</span><span class="p">:</span>
+                <span class="c1"># File has not changed</span>
+                <span class="k">pass</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1">#print &quot;EMC TEST count Eit &quot; + str(path)</span>
+
+                <span class="c1"># New path or file has changed</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eit_mtime</span> <span class="o">=</span> <span class="n">mtime</span>
+
+                <span class="c1"># Read data from file</span>
+                <span class="c1"># OE1.6 with Pyton 2.6</span>
+                <span class="c1">#with open(self.eit_file, &#39;r&#39;) as file: lines = file.readlines()</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+                    <span class="c1">#lines = f.readlines()</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[META] Exception in readEitFile: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+                <span class="c1"># Parse the data</span>
+                <span class="k">if</span> <span class="n">data</span> <span class="ow">and</span> <span class="mi">12</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                    <span class="c1"># go through events</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">e</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&gt;HHBBBBBBH&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="p">:</span><span class="n">pos</span><span class="o">+</span><span class="mi">12</span><span class="p">])</span>
+                    <span class="n">event_id</span> <span class="o">=</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">date</span>     <span class="o">=</span> <span class="n">parseMJD</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>                         <span class="c1"># Y, M, D</span>
+                    <span class="n">time</span>     <span class="o">=</span> <span class="n">unBCD</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">unBCD</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="n">unBCD</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>  <span class="c1"># HH, MM, SS</span>
+                    <span class="n">duration</span> <span class="o">=</span> <span class="n">unBCD</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span> <span class="n">unBCD</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span> <span class="n">unBCD</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>  <span class="c1"># HH, MM, SS</span>
+                    <span class="n">running_status</span>  <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xe000</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">13</span>
+                    <span class="n">free_CA_mode</span>    <span class="o">=</span> <span class="n">e</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x1000</span>
+                    <span class="n">descriptors_len</span> <span class="o">=</span> <span class="n">e</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x0fff</span>
+
+                    <span class="k">if</span> <span class="n">running_status</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;when&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;NEXT&quot;</span>
+                    <span class="k">elif</span> <span class="n">running_status</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;when&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;NOW&quot;</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;startdate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">date</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;duration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">duration</span>
+
+                    <span class="n">pos</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="mi">12</span>
+                    <span class="n">name_event</span><span class="o">=</span><span class="n">Event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+                    <span class="n">short_event</span><span class="o">=</span><span class="n">Event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s2">&quot;short&quot;</span><span class="p">)</span>
+                    <span class="n">extended_event</span><span class="o">=</span><span class="n">Event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s2">&quot;extended&quot;</span><span class="p">)</span>
+            
+                    <span class="n">component_descriptor</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">content_descriptor</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">linkage_descriptor</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">parental_rating_descriptor</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">endpos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">prev1_ISO_639_language_code</span> <span class="o">=</span> <span class="s2">&quot;x&quot;</span>
+                    <span class="n">prev2_ISO_639_language_code</span> <span class="o">=</span> <span class="s2">&quot;x&quot;</span>
+                    <span class="k">while</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">endpos</span><span class="p">:</span>
+                        <span class="n">rec</span> <span class="o">=</span> <span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="o">&gt;=</span><span class="n">endpos</span><span class="p">:</span>
+                            <span class="k">break</span>
+                        <span class="n">length</span> <span class="o">=</span> <span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">2</span>
+                        <span class="c1">#if pos+length&gt;=endpos:</span>
+                        <span class="c1">#    break</span>
+                        <span class="k">if</span> <span class="n">rec</span> <span class="o">==</span> <span class="mh">0x4D</span><span class="p">:</span>
+                            <span class="n">descriptor_tag</span> <span class="o">=</span> <span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+                            <span class="n">descriptor_length</span> <span class="o">=</span> <span class="n">bord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span>
+                            <span class="n">ISO_639_language_code</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="n">pos</span><span class="o">+</span><span class="mi">5</span><span class="p">])</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+                          
+                            <span class="n">name_event</span><span class="o">.</span><span class="n">readDescription</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">pos</span><span class="o">+</span><span class="mi">5</span><span class="p">)</span>        
+                            <span class="n">name_event</span><span class="o">.</span><span class="n">readCodepage</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">pos</span><span class="o">+</span><span class="mi">6</span><span class="p">)</span>
+                            <span class="n">short_event</span><span class="o">.</span><span class="n">readCodepage</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pos</span><span class="o">+</span><span class="mi">7</span><span class="o">+</span><span class="n">name_event</span><span class="o">.</span><span class="n">event_name_length</span><span class="p">)</span>
+                            <span class="n">short_event</span><span class="o">.</span><span class="n">readDescription</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pos</span><span class="o">+</span><span class="mi">7</span><span class="o">+</span><span class="n">name_event</span><span class="o">.</span><span class="n">event_name_length</span><span class="p">,</span><span class="n">pos</span><span class="o">+</span><span class="n">length</span><span class="p">)</span>
+                            <span class="n">short_event</span><span class="o">.</span><span class="n">appendDescription</span><span class="p">(</span><span class="n">lang</span><span class="p">,</span> <span class="n">ISO_639_language_code</span><span class="p">,</span><span class="n">prev1_ISO_639_language_code</span><span class="p">)</span>
+                            <span class="n">name_event</span><span class="o">.</span><span class="n">appendDescription</span><span class="p">(</span><span class="n">lang</span><span class="p">,</span> <span class="n">ISO_639_language_code</span><span class="p">,</span><span class="n">prev1_ISO_639_language_code</span><span class="p">,</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+                            <span class="n">prev1_ISO_639_language_code</span> <span class="o">=</span> <span class="n">ISO_639_language_code</span>
+                        <span class="k">elif</span> <span class="n">rec</span> <span class="o">==</span> <span class="mh">0x4E</span><span class="p">:</span>
+                            <span class="n">ISO_639_language_code</span> <span class="o">=</span> <span class="n">Event</span><span class="o">.</span><span class="n">readLanguageCode</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">pos</span><span class="o">+</span><span class="mi">3</span><span class="p">)</span>
+                            <span class="n">extended_event</span><span class="o">.</span><span class="n">readCodepage</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pos</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+                            <span class="n">extended_event</span><span class="o">.</span><span class="n">readDescription</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pos</span><span class="o">+</span><span class="mi">8</span><span class="p">,</span><span class="n">pos</span><span class="o">+</span><span class="n">length</span><span class="p">)</span>
+                            <span class="n">extended_event</span><span class="o">.</span><span class="n">appendDescription</span><span class="p">(</span><span class="n">lang</span><span class="p">,</span> <span class="n">ISO_639_language_code</span><span class="p">,</span> <span class="n">prev2_ISO_639_language_code</span><span class="p">)</span>
+                            <span class="n">prev2_ISO_639_language_code</span> <span class="o">=</span> <span class="n">ISO_639_language_code</span>
+                        <span class="k">elif</span> <span class="n">rec</span> <span class="o">==</span> <span class="mh">0x50</span><span class="p">:</span>
+                            <span class="n">component_descriptor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">8</span><span class="p">:</span><span class="n">pos</span><span class="o">+</span><span class="n">length</span><span class="p">])</span>
+                        <span class="k">elif</span> <span class="n">rec</span> <span class="o">==</span> <span class="mh">0x54</span><span class="p">:</span>
+                            <span class="n">content_descriptor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">8</span><span class="p">:</span><span class="n">pos</span><span class="o">+</span><span class="n">length</span><span class="p">])</span>
+                        <span class="k">elif</span> <span class="n">rec</span> <span class="o">==</span> <span class="mh">0x4A</span><span class="p">:</span>
+                            <span class="n">linkage_descriptor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">8</span><span class="p">:</span><span class="n">pos</span><span class="o">+</span><span class="n">length</span><span class="p">])</span>
+                        <span class="k">elif</span> <span class="n">rec</span> <span class="o">==</span> <span class="mh">0x55</span><span class="p">:</span>
+                            <span class="n">parental_rating_descriptor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="n">pos</span><span class="o">+</span><span class="n">length</span><span class="p">])</span>
+                        <span class="k">else</span><span class="p">:</span>
+<span class="c1">#                            print &quot;unsupported descriptor: %x %x&quot; %(rec, pos + 12)</span>
+<span class="c1">#                            print data[pos:pos+length]</span>
+                            <span class="k">pass</span>
+                        <span class="n">pos</span> <span class="o">+=</span> <span class="n">length</span>
+                    
+                    <span class="n">name_event</span><span class="o">.</span><span class="n">joinDescriptor</span><span class="p">()</span>
+                    <span class="n">short_event</span><span class="o">.</span><span class="n">joinDescriptor</span><span class="p">()</span>
+                    <span class="n">extended_event</span><span class="o">.</span><span class="n">joinDescriptor</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">extended_event</span><span class="o">.</span><span class="n">descriptor</span><span class="p">):</span>
+                        <span class="n">extended_event</span><span class="o">.</span><span class="n">descriptor</span> <span class="o">=</span> <span class="n">short_event</span><span class="o">.</span><span class="n">descriptor</span>
+                        <span class="n">extended_event</span><span class="o">.</span><span class="n">codepage</span> <span class="o">=</span> <span class="n">short_event</span><span class="o">.</span><span class="n">codepage</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_event</span><span class="o">.</span><span class="n">fixEncoding</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;short_description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">short_event</span><span class="o">.</span><span class="n">fixEncoding</span><span class="p">()</span>
+
+                    <span class="c1"># This will fix EIT data of RTL group with missing line breaks in extended event description</span>
+                    <span class="n">description</span><span class="o">=</span><span class="n">extended_event</span><span class="o">.</span><span class="n">fixEncoding</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
+                        <span class="n">description</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;((?:Moderat(?:ion:|or(?:in){0,1})|Vorsitz: |Jur(?:isten|y): |G(?:</span><span class="se">\xC3\xA4</span><span class="s1">|a)st(?:e){0,1}: |Mit (?:Staatsanwalt|Richter(?:in){0,1}|den Schadenregulierern) |Julia Leisch).*?[a-z]+)(</span><span class="se">\&#39;</span><span class="s1">{0,1}[0-9A-Z</span><span class="se">\&#39;</span><span class="s1">])&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1\n\n\2&#39;</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eit</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># No date clear all</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eit</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No path or no file clear all</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eit</span> <span class="o">=</span> <span class="p">{}</span></div>
+ 
+
+<span class="sd">&quot;&quot;&quot;Module docstring.</span>
+
+<span class="sd">Read Eit File and show the information.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">getopt</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../eit.html#eit.eitparser.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># parse command line options</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">opts</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">getopt</span><span class="o">.</span><span class="n">getopt</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="s2">&quot;h&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;help&quot;</span><span class="p">])</span>
+    <span class="k">except</span> <span class="n">getopt</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">msg</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;for help use --help&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># process options</span>
+    <span class="k">for</span> <span class="n">o</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">o</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;-h&quot;</span><span class="p">,</span> <span class="s2">&quot;--help&quot;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="vm">__doc__</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># process arguments</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="n">EitList</span><span class="o">.</span><span class="n">readeit</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="c1"># process() is defined elsewhere</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2011, Frank Glaser
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
