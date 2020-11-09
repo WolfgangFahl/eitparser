@@ -8,6 +8,9 @@ import os
 from eit.eitparser import EitList
 
 class TestEitParser(unittest.TestCase):
+    '''
+    test the standalone EIT Parser
+    '''
 
 
     def setUp(self):
@@ -24,7 +27,7 @@ class TestEitParser(unittest.TestCase):
         '''
         home = os.path.expanduser("~")
         eitdir= home+"/movies/eit"
-        EitList.readeit(eitdir)
+        EitList.readeit(eitdir,debug=False)
         pass
 
 

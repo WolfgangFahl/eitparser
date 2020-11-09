@@ -32,8 +32,7 @@ import time
 import chardet
 
 from datetime import datetime
-def emcDebugOut(msg):
-    print(msg,file=sys.stderr)
+
     
 #from Components.config import config
 #from Components.Language import language
@@ -108,16 +107,18 @@ class Bytes(object):
         self.bytes=self.bytes.strip()
         return self
             
-        
-        
 class Event(object):
     
-    def __init__(self,name):
+    def __init__(self,eitList,name):
+        self.eitList=eitList
         self.name=name
         self.description=Bytes()
         self.descriptor = []
         self.descriptor_multi = []
         self.codepage = None
+        
+    def log(self,msg):
+        self.eitList.log(msg)
         
     @staticmethod
     def readLanguageCode(data,ofs):
@@ -143,7 +144,7 @@ class Event(object):
                 if str(bord(data[i]))=="10" or int(str(bord(data[i])))>31:
                     self.description.append(data[i])
             except IndexError as e:
-                emcDebugOut("[META] Exception in readEitFile: " + str(e))
+                self.log("[META] Exception in readEitFile: " + str(e))
                 
     def appendDescription(self,lang, ISO_639_language_code,prev1_ISO_639_language_code,delim="\n\n"):
         if ISO_639_language_code == lang:
@@ -166,20 +167,20 @@ class Event(object):
                 self.descriptor=bytes(self.descriptor.bytes)
                 if self.codepage:
                     if self.codepage != 'utf-8':
-                        self.descriptor = self.descriptor.decode(self.codepage).encode("utf-8")
+                        self.descriptor = self.descriptor.decode(self.codepage)
                     else:
                         self.descriptor=self.descriptor.decode('utf-8')
                 else:
                     encdata = chardet.detect(self.descriptor)
                     enc = encdata['encoding'].lower()
                     confidence = str(encdata['confidence'])
-                    emcDebugOut("[META] Detected %s event encoding-type: %s ( %s )" % (self.name,enc,confidence))
+                    self.log("[META] Detected %s event encoding-type: %s ( %s )" % (self.name,enc,confidence))
                     if enc == "utf-8":
                         self.descriptor.decode(enc)
                     else:
-                        self.descriptor = self.descriptor.decode(enc).encode('utf-8')
+                        self.descriptor = self.descriptor.decode(enc)
             except (UnicodeDecodeError, AttributeError) as e:
-                emcDebugOut("[META] Exception in readEitFile: " + str(e))
+                self.log("[META] Exception in readEitFile: " + str(e))
         return self.descriptor
 
             
@@ -202,7 +203,7 @@ class Event(object):
         elif byte1=="11": self.codepage = 'iso-8859-15'
         elif byte1=="21": self.codepage = 'utf-8'
         if self.codepage:
-            emcDebugOut("[META] Found %s encoding-type: %s" % (self.name,self.codepage))
+            self.log("[META] Found %s encoding-type: %s" % (self.name,self.codepage))
 
 # Eit File support class
 # Description
@@ -213,9 +214,10 @@ class EitList():
     EIT_SHORT_EVENT_DESCRIPTOR = 0x4d
     EIT_EXTENDED_EVENT_DESCRIPOR = 0x4e
 
-    def __init__(self, path=None):
+    def __init__(self, path=None,debug=False):
         self.eit_file = None
         self.eit_mtime = 0
+        self.debug=debug
 
         #TODO
         # The dictionary implementation could be very slow
@@ -225,20 +227,23 @@ class EitList():
         self.__newPath(path)
         self.__readEitFile()
 
-        
+    def log(self,msg):
+        if self.debug:
+            print(msg,file=sys.stderr)
+            
     @staticmethod
-    def readeit(eitroot):
+    def readeit(eitroot,debug=False):
         if os.path.isdir(eitroot):
             for p in pathlib.Path(eitroot).iterdir():
                 if p.is_file():
                     if p.name.endswith(".eit"):
-                        EitList.readeitFile(p)
+                        EitList.readeitFile(p,debug)
         elif os.path.isfile(eitroot):
-            EitList.readeitFile(eitroot)
+            EitList.readeitFile(eitroot,debug)
             
     @staticmethod
-    def readeitFile(eitfile):
-        eitlist=EitList(eitfile)
+    def readeitFile(eitfile,debug=False):
+        eitlist=EitList(eitfile,debug=debug)
         print(eitlist.getEitName());
         print(eitlist.getEitStartDate());
         print(eitlist.getEitDescription());    
@@ -355,7 +360,7 @@ class EitList():
                     #lines = f.readlines()
                     data = f.read()
                 except Exception as e:
-                    emcDebugOut("[META] Exception in readEitFile: " + str(e))
+                    self.log("[META] Exception in readEitFile: " + str(e))
                 finally:
                     if f is not None:
                         f.close()
@@ -383,9 +388,9 @@ class EitList():
                     self.eit['duration'] = duration
 
                     pos = pos + 12
-                    name_event=Event("name")
-                    short_event=Event("short")
-                    extended_event=Event("extended")
+                    name_event=Event(self,"name")
+                    short_event=Event(self,"short")
+                    extended_event=Event(self,"extended")
             
                     component_descriptor = []
                     content_descriptor = []
