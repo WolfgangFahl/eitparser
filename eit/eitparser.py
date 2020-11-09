@@ -49,20 +49,20 @@ from datetime import datetime
 #           crc = crc & 0xffffffffL
 #   return crc
 
-decoding_charSpecHR = {u'Ć': u'\u0106', u'æ': u'\u0107', u'®': u'\u017D', u'¾': u'\u017E', u'©': u'\u0160', u'¹': u'\u0161', u'Č': u'\u010C', u'è': u'\u010D', u'ð': u'\u0111'}
+decoding_charSpecHR = {'Ć': '\u0106', 'æ': '\u0107', '®': '\u017D', '¾': '\u017E', '©': '\u0160', '¹': '\u0161', 'Č': '\u010C', 'è': '\u010D', 'ð': '\u0111'}
 
-decoding_charSpecCZSK = {u'Ï'+u'C': u'Č',u'Ï'+u'E': u'Ě',u'Ï'+u'L': u'Ľ',u'Ï'+u'N': u'Ň',u'Ï'+u'R': u'Ř',u'Ï'+u'S': u'Š',u'Ï'+u'T': u'Ť',u'Ï'+u'Z': u'Ž',u'Ï'+u'c': u'č',u'Ï'+u'd': u'ď',u'Ï'+u'e': u'ě',u'Ï'+u'l': u'ľ', u'Ï'+u'n': u'ň',
-u'Ï'+u'r': u'ř',u'Ï'+u's': u'š',u'Ï'+u't': u'ť',u'Ï'+u'z': u'ž',u'Ï'+u'D': u'Ď',u'Â'+u'A': u'Á',u'Â'+u'E': u'É',u'Â'+u'I': u'Í',u'Â'+u'O': u'Ó',u'Â'+u'U': u'Ú',u'Â'+u'a': u'á',u'Â'+u'e': u'é',u'Â'+u'i': u'í',u'Â'+u'o': u'ó',
-u'Â'+u'u': u'ú',u'Â'+u'y': u'ý',u'Ã'+u'o': u'ô',u'Ã'+u'O': u'Ô',u'Ê'+u'u': u'ů',u'Ê'+u'U': u'Ů',u'È'+u'A': u'Ä',u'È'+u'E': u'Ë',u'È'+u'I': u'Ï',u'È'+u'O': u'Ö',u'È'+u'U': u'Ü',u'È'+u'Y': u'Ÿ',u'È'+u'a': u'ä',u'È'+u'e': u'ë',
-u'È'+u'i': u'ï',u'È'+u'o': u'ö',u'È'+u'u': u'ü',u'È'+u'y': u'ÿ'}
+decoding_charSpecCZSK = {'Ï'+'C': 'Č','Ï'+'E': 'Ě','Ï'+'L': 'Ľ','Ï'+'N': 'Ň','Ï'+'R': 'Ř','Ï'+'S': 'Š','Ï'+'T': 'Ť','Ï'+'Z': 'Ž','Ï'+'c': 'č','Ï'+'d': 'ď','Ï'+'e': 'ě','Ï'+'l': 'ľ', 'Ï'+'n': 'ň',
+'Ï'+'r': 'ř','Ï'+'s': 'š','Ï'+'t': 'ť','Ï'+'z': 'ž','Ï'+'D': 'Ď','Â'+'A': 'Á','Â'+'E': 'É','Â'+'I': 'Í','Â'+'O': 'Ó','Â'+'U': 'Ú','Â'+'a': 'á','Â'+'e': 'é','Â'+'i': 'í','Â'+'o': 'ó',
+'Â'+'u': 'ú','Â'+'y': 'ý','Ã'+'o': 'ô','Ã'+'O': 'Ô','Ê'+'u': 'ů','Ê'+'U': 'Ů','È'+'A': 'Ä','È'+'E': 'Ë','È'+'I': 'Ï','È'+'O': 'Ö','È'+'U': 'Ü','È'+'Y': 'Ÿ','È'+'a': 'ä','È'+'e': 'ë',
+'È'+'i': 'ï','È'+'o': 'ö','È'+'u': 'ü','È'+'y': 'ÿ'}
 
 def convertCharSpecHR(text):
-    for i, j in decoding_charSpecHR.iteritems():
+    for i, j in decoding_charSpecHR.items():
         text = text.replace(i, j)
     return text
 
 def convertCharSpecCZSK(text):
-    for i, j in decoding_charSpecCZSK.iteritems():
+    for i, j in decoding_charSpecCZSK.items():
         text = text.replace(i, j)
     return text
 
@@ -93,7 +93,7 @@ def language_iso639_2to3(alpha2):
     ret = alpha2
     if alpha2 in LanguageCodes:
         language = LanguageCodes[alpha2]
-        for alpha, name in LanguageCodes.items():
+        for alpha, name in list(LanguageCodes.items()):
             if name == language:
                 if len(alpha) == 3:
                     return alpha
@@ -208,7 +208,7 @@ class EitList():
                     f = open(path, 'rb')
                     #lines = f.readlines()
                     data = f.read()
-                except Exception, e:
+                except Exception as e:
                     emcDebugOut("[META] Exception in readEitFile: " + str(e))
                 finally:
                     if f is not None:
@@ -357,23 +357,23 @@ import getopt
 
 def readeit(eitfile):
     eitlist=EitList(eitfile)
-    print eitlist.getEitName();
-    print eitlist.getEitStartDate();
-    print eitlist.getEitDescription();
+    print(eitlist.getEitName());
+    print(eitlist.getEitStartDate());
+    print(eitlist.getEitDescription());
 
 
 def main():
     # parse command line options
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-    except getopt.error, msg:
-        print msg
-        print "for help use --help"
+    except getopt.error as msg:
+        print(msg)
+        print("for help use --help")
         sys.exit(2)
     # process options
     for o, a in opts:
         if o in ("-h", "--help"):
-            print __doc__
+            print(__doc__)
             sys.exit(0)
     # process arguments
     for arg in args:
