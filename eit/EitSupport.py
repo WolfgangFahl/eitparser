@@ -22,17 +22,20 @@
 
 import os
 import struct
+import sys
 import time
 import chardet
 
 from datetime import datetime
+def emcDebugOut(msg):
+    print(msg,file=sys.stderr)
+    
+#from Components.config import config
+#from Components.Language import language
+#from EMCTasker import emcDebugOut
+#from IsoFileSupport import IsoSupport
 
-from Components.config import config
-from Components.Language import language
-from EMCTasker import emcDebugOut
-from IsoFileSupport import IsoSupport
-
-from MetaSupport import getInfoFile
+#from MetaSupport import getInfoFile
 
 def parseMJD(MJD):
     # Parse 16 bit unsigned int containing Modified Julian Date,
@@ -49,7 +52,11 @@ def parseMJD(MJD):
 def unBCD(byte):
     return (byte>>4)*10 + (byte & 0xf)
 
-from Tools.ISO639 import LanguageCodes
+#from Tools.ISO639 import LanguageCodes
+# -*- coding: iso-8859-2 -*-
+LanguageCodes = { }
+LanguageCodes["deu"] = LanguageCodes["ger"] = LanguageCodes["de"] = ("German", "Germanic")
+LanguageCodes["fra"] = LanguageCodes["fre"] = LanguageCodes["fr"] = ("French", "Romance")
 def language_iso639_2to3(alpha2):
     ret = alpha2
     if alpha2 in LanguageCodes:
@@ -93,14 +100,14 @@ class EitList():
             #el
 
             exts = [".eit"]
-            fpath = getInfoFile(path, exts)[1]
-            path = os.path.splitext(fpath)[0]
+            #fpath = getInfoFile(path, exts)[1]
+            #path = os.path.splitext(fpath)[0]
 
-            if not os.path.exists(path + ".eit"):
-                # Strip existing cut number
-                if path[-4:-3] == "_" and path[-3:].isdigit():
-                    path = path[:-4]
-            path += ".eit"
+            #if not os.path.exists(path + ".eit"):
+            #    # Strip existing cut number
+            #    if path[-4:-3] == "_" and path[-3:].isdigit():
+            #        path = path[:-4]
+            #path += ".eit"
             if self.eit_file != path:
                 self.eit_file = path
                 self.eit_mtime = 0
@@ -165,11 +172,11 @@ class EitList():
 
     ##############################################################################
     ## File IO Functions
-    def __readEitFile(self):
+    def __readEitFile(self,lang='de'):
         data = ""
         path = self.eit_file
 
-        lang = (language_iso639_2to3(config.EMC.epglang.value.lower()[:2])).upper()
+        lang = (language_iso639_2to3(lang)).upper()
 
         if path and os.path.exists(path):
             mtime = os.path.getmtime(path)
@@ -191,7 +198,7 @@ class EitList():
                     f = open(path, 'rb')
                     #lines = f.readlines()
                     data = f.read()
-                except Exception, e:
+                except Exception as e:
                     emcDebugOut("[META] Exception in readEitFile: " + str(e))
                 finally:
                     if f is not None:
@@ -253,7 +260,7 @@ class EitList():
                                 try:
                                     if str(ord(data[i]))=="10" or int(str(ord(data[i])))>31:
                                         name_event_description += data[i]
-                                except IndexError, e:
+                                except IndexError as e:
                                     emcDebugOut("[META] Exception in readEitFile: " + str(e))
                             if not name_event_codepage:
                                 try:
@@ -296,7 +303,7 @@ class EitList():
                                 try:
                                     if str(ord(data[i]))=="10" or int(str(ord(data[i])))>31:
                                         short_event_description += data[i]
-                                except IndexError, e:
+                                except IndexError as e:
                                     emcDebugOut("[META] Exception in readEitFile: " + str(e))
                             if ISO_639_language_code == lang:
                                 short_event_descriptor.append(short_event_description)
@@ -336,7 +343,7 @@ class EitList():
                                 try:
                                     if str(ord(data[i]))=="10" or int(str(ord(data[i])))>31:
                                         extended_event_description += data[i]
-                                except IndexError, e:
+                                except IndexError as e:
                                     emcDebugOut("[META] Exception in readEitFile: " + str(e))
                             if ISO_639_language_code == lang:
                                 extended_event_descriptor.append(extended_event_description)
@@ -394,7 +401,7 @@ class EitList():
                                     name_event_descriptor.decode(enc)
                                 else:
                                     name_event_descriptor = name_event_descriptor.decode(enc).encode('utf-8')
-                        except (UnicodeDecodeError, AttributeError), e:
+                        except (UnicodeDecodeError, AttributeError) as e:
                             emcDebugOut("[META] Exception in readEitFile: " + str(e))
                     self.eit['name'] = name_event_descriptor
 
@@ -414,7 +421,7 @@ class EitList():
                                     short_event_descriptor.decode(enc)
                                 else:
                                     short_event_descriptor = short_event_descriptor.decode(enc).encode('utf-8')
-                        except (UnicodeDecodeError, AttributeError), e:
+                        except (UnicodeDecodeError, AttributeError) as e:
                             emcDebugOut("[META] Exception in readEitFile: " + str(e))
                     self.eit['short_description'] = short_event_descriptor
 
@@ -434,7 +441,7 @@ class EitList():
                                     extended_event_descriptor.decode(enc)
                                 else:
                                     extended_event_descriptor = extended_event_descriptor.decode(enc).encode('utf-8')
-                        except (UnicodeDecodeError, AttributeError), e:
+                        except (UnicodeDecodeError, AttributeError) as e:
                             emcDebugOut("[META] Exception in readEitFile: " + str(e))
 
                         # This will fix EIT data of RTL group with missing line breaks in extended event description
